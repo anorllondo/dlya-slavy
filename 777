@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Галерея искусств</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .form-section { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        input, select { margin: 5px; padding: 8px; width: 200px; }
+        button { padding: 10px 15px; cursor: pointer; background: #2c3e50; color: white; border: none; border-radius: 3px; }
+        .xml-btns { margin: 20px 0; }
+        .section-title { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🎨 База данных "Галерея искусств"</h1>
+
+    <div class="form-section">
+        <h3 class="section-title">Добавить художника</h3>
+        <form action="/add_artist" method="post">
+            <input type="text" name="name" placeholder="Имя художника" required><br>
+            <input type="text" name="country" placeholder="Страна" required><br>
+            <input type="number" name="birth_year" placeholder="Год рождения" required><br>
+            <input type="text" name="style" placeholder="Стиль" required><br>
+            <button type="submit">Добавить художника</button>
+        </form>
+    </div>
+
+    <div class="form-section">
+        <h3 class="section-title">Добавить картину</h3>
+        <form action="/add_painting" method="post">
+            <select name="artist_id" required>
+                <option value="">Выберите художника</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}">{{ a.name }}</option>
+                {% endfor %}
+            </select><br>
+            <input type="text" name="title" placeholder="Название картины" required><br>
+            <input type="number" name="year" placeholder="Год создания" required><br>
+            <input type="text" name="technique" placeholder="Техника" required><br>
+            <button type="submit">Добавить картину</button>
+        </form>
+    </div>
+
+    <div class="xml-btns">
+        <h3 class="section-title">Экспорт/Импорт данных</h3>
+        <a href="/export/xml"><button style="background: #3498db;">Экспорт в XML</button></a>
+        <form action="/import/xml" method="post" style="display:inline;">
+            <button type="submit" style="background: #7f8c8d;">Импорт из XML</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <h2 class="section-title">Художники</h2>
+    <table>
+        <tr><th>ID</th><th>Имя</th><th>Страна</th><th>Год рождения</th><th>Стиль</th></tr>
+        {% for a in artists %}
+        <tr><td>{{ a.id }}</td><td>{{ a.name }}</td><td>{{ a.country }}</td><td>{{ a.birth_year }}</td><td>{{ a.style }}</td></tr>
+        {% endfor %}
+    </table>
+
+    <h2 class="section-title">Картины</h2>
+    <table>
+        <tr><th>ID</th><th>Название</th><th>Художник</th><th>Год</th><th>Техника</th></tr>
+        {% for p in paintings %}
+        <tr><td>{{ p.id }}</td><td>{{ p.title }}</td><td>{{ p.artist_name }}</td><td>{{ p.year }}</td><td>{{ p.technique }}</td></tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
