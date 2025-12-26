@@ -114,7 +114,15 @@ def import_xml():
     
     tree = ET.parse("artists_data.xml")
     root = tree.
-
+    getroot()
+    con = get_db_conn()
+    for item in root.findall('artist'):
+        con.execute('INSERT INTO artists (name, country, birth_year, style) VALUES (?, ?, ?, ?)',
+                    (item.find('name').text, item.find('country').text, 
+                     int(item.find('birth_year').text), item.find('style').text))
+    con.commit()
+    con.close()
+    return {"message": "Данные импортированы"}
 
 
 
