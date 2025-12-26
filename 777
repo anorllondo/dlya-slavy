@@ -1,3 +1,129 @@
+
+import sqlite3
+import os
+import xml.etree.ElementTree as ET
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
+
+app = FastAPI()
+current_dir = os.path.dirname(os.path.realpath(__file__))
+templates = Jinja2Templates(directory=os.path.join(current_dir, "templates"))
+
+# Инициализация БД (Живопись)
+def init_db():
+    con = sqlite3.connect('art_gallery.db')
+    cur = con.cursor()
+    
+    cur.execute('DROP TABLE IF EXISTS paintings')
+    cur.execute('DROP TABLE IF EXISTS artists')
+    
+    cur.execute('''
+        CREATE TABLE artists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            name TEXT, 
+            country TEXT, 
+            birth_year INTEGER,
+            style TEXT
+        )
+    ''')
+    
+    cur.execute('''
+        CREATE TABLE paintings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            artist_id INTEGER, 
+            title TEXT, 
+            year INTEGER,
+            technique TEXT,
+            FOREIGN KEY(artist_id) REFERENCES artists(id)
+        )
+    ''')
+    
+    initial_artists = [
+        ('Винсент Ван Гог', 'Нидерланды', 1853, 'Постимпрессионизм'),
+        ('Леонардо да Винчи', 'Италия', 1452, 'Ренессанс'),
+        ('Клод Моне', 'Франция', 1840, 'Импрессионизм')
+    ]
+    cur.executemany('INSERT INTO artists (name, country, birth_year, style) VALUES (?,?,?,?)', initial_artists)
+    
+    cur.execute('INSERT INTO paintings (artist_id, title, year, technique) VALUES (1, "Звездная ночь", 1889, "Масло")')
+    cur.execute('INSERT INTO paintings (artist_id, title, year, technique) VALUES (2, "Мона Лиза", 1503, "Масло")')
+    cur.execute('INSERT INTO paintings (artist_id, title, year, technique) VALUES (3, "Водяные лилии", 1916, "Масло")')
+    
+    con.commit()
+    con.close()
+
+init_db()
+
+def get_db_conn():
+    conn = sqlite3.connect('art_gallery.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    con = get_db_conn()
+    artists = con.execute('SELECT * FROM artists').fetchall()
+    paintings = con.execute('SELECT p.*, a.name as artist_name FROM paintings p JOIN artists a ON p.artist_id = a.id').fetchall()
+    con.close()
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "artists": artists,
+        "paintings": paintings
+    })
+
+@app.post("/add_artist")
+async def add_artist(name: str = Form(...), country: str = Form(...), birth_year: int = Form(...), style: str = Form(...)):
+    con = get_db_conn()
+    con.execute('INSERT INTO artists (name, country, birth_year, style) VALUES (?, ?, ?, ?)', (name, country, birth_year, style))
+    con.commit()
+    con.close()
+    return {"status": "Художник добавлен"}
+
+@app.post("/add_painting")
+async def add_painting(artist_id: int = Form(...), title: str = Form(...), year: int = Form(...), technique: str = Form(...)):
+    con = get_db_conn()
+    con.execute('INSERT INTO paintings (artist_id, title, year, technique) VALUES (?, ?, ?, ?)', (artist_id, title, year, technique))
+    con.commit()
+    con.close()
+    return {"status": "Картина добавлена"}
+
+@app.get("/export/xml")
+def export_xml():
+    con = get_db_conn()
+    artists = con.execute('SELECT * FROM artists').fetchall()
+    con.close()
+
+    root = ET.Element("art_gallery")
+    for a in artists:
+        artist_node = ET.SubElement(root, "artist")
+        ET.SubElement(artist_node, "name").text = str(a["name"])
+        ET.SubElement(artist_node, "country").text = str(a["country"])
+        ET.SubElement(artist_node, "birth_year").text = str(a["birth_year"])
+        ET.SubElement(artist_node, "style").text = str(a["style"])
+
+    tree = ET.ElementTree(root)
+    xml_path = "artists_data.xml"
+    tree.write(xml_path, encoding="utf-8", xml_declaration=True)
+    return FileResponse(xml_path)
+
+@app.post("/import/xml")
+def import_xml():
+    if not os.path.exists("artists_data.xml"):
+        return {"error": "Файл не найден"}
+    
+    tree = ET.parse("artists_data.xml")
+    root = tree.
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
